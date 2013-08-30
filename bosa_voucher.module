@@ -1,0 +1,111 @@
+<?php
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_menu()
+ */
+function bosa_voucher_menu() {
+  $items = array();
+
+  $items['admin/bosa/voucher'] = array(
+    'title' => 'BOSA Voucher',
+    'Description' => 'Administer BOSA Vouchers',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access bosa administration pages'),
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
+    'weight' => -5,
+  );
+
+  $items['admin/bosa/voucher/mail'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bosa_voucher_mail_settings'),
+    'title' => 'BOSA Mail settings',
+    'description' => 'Change settings for voucher mail',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer bosa offer mail'), 
+    'file path' => drupal_get_path('module', 'bosa_voucher'),
+    'file' => 'bosa_voucher.admin.inc',
+  );
+
+  $items['admin/bosa/voucher/voucher'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bosa_voucher_voucher_settings'),
+    'title' => 'BOSA Voucher settings',
+    'description' => 'Change settings for voucher mail',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer bosa offer mail'), 
+    'file path' => drupal_get_path('module', 'bosa_voucher'),
+    'file' => 'bosa_voucher.admin.inc',
+  );
+
+  $items['bosa/voucher/ticket'] = array(
+    'page callback' => 'bosa_voucher_ticket_page',
+    'title' => 'BOSA tickets',
+    'description' => '',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'), 
+    'file path' => drupal_get_path('module', 'bosa_voucher'),
+    'file' => 'bosa_voucher.pages.inc',
+  );
+
+  $items['bosa/voucher/product'] = array(
+    'page callback' => 'bosa_voucher_product_page',
+    'title' => 'BOSA tickets',
+    'description' => '',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'), 
+    'file path' => drupal_get_path('module', 'bosa_voucher'),
+    'file' => 'bosa_voucher.pages.inc',
+  );
+
+  $items['bosa/pdf'] = array(
+    'page callback' => 'bosa_voucher_pdf',
+    'title' => 'BOSA voucher pdf',
+    'description' => '',
+    'access arguments' => array('access content'), 
+    'file path' => drupal_get_path('module', 'bosa_voucher'),
+    'file' => 'bosa_voucher.voucher.inc',
+  );
+
+  return $items; 
+}
+
+function bosa_voucher_save_ticket($line_item_id, $product_id, $uid){
+  try {
+    $nid = db_insert('bosa_voucher') // Table name no longer needs {}
+    ->fields(array(
+      'line_item_id' => $line_item_id,
+      'uid' => $uid,
+      'product_id' => $product_id,
+      'created' => REQUEST_TIME,
+    ))
+    ->execute();
+
+    return true;
+
+  } 
+  catch (PDOException $e ) {
+    return false;
+  }
+}
+
+function bosa_voucher_check_ticket($line_item_id, $product_id = '%') {
+  try {
+    $result = db_select('bosa_voucher', 'b')
+      ->fields('b')
+      ->condition('product_id', $product_id, '=')
+      ->condition('line_item_id', $line_item_id, '=')
+      ->execute()
+      ->fetchAll();
+
+    if(count($result) == 1) {
+      $result = array_shift($result);
+      return array($result->created, $result->uid);
+    }
+  } catch (Exception $e) {
+
+  }
+}

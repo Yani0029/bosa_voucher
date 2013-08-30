@@ -1,0 +1,16 @@
+name = BOSA voucher pdf template feature
+description = Custom content type for pdf voucher
+core = 7.x
+package = Features
+php = 5.2.4
+dependencies[] = features
+dependencies[] = image
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:1
+features[field][] = node-bosa_voucher_pdf_template-field_contactinfo
+features[field][] = node-bosa_voucher_pdf_template-field_logo
+features[field][] = node-bosa_voucher_pdf_template-field_postscript
+features[field][] = node-bosa_voucher_pdf_template-field_preface
+features[node][] = bosa_voucher_pdf_template
+features[variable][] = field_bundle_settings_node__bosa_voucher_pdf_template

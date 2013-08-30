@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the BOSA offer mail feature feature.
+ */
+
+include_once 'bosa_voucher_pdf_template.features.inc';

@@ -1,0 +1,90 @@
+body {
+  font-family: sans-serif;
+  width: 700px;
+  font-size: 12px;
+}
+.view-content .views-field.views-field-field-offer-you-get, 
+.view-content .views-field.views-field-title {
+width: 700px;
+}
+.views-field-title .field-content{
+  margin-top: 30px;
+  font-size: 20px;
+  display: block;
+}
+.views-label {
+  font-weight: bold;
+}
+
+.views-field.views-field {
+width: 300px;
+}
+.page-break{
+  page-break-after: always;
+}
+
+td.left {
+width: 300px;
+}
+.ticket { clear:left;
+padding-top: 30px;
+}
+.ticket.title{
+  font-size: 20px;
+  margin-bottom: 25px;
+}
+
+.header{
+  font-size: 26px;
+}
+
+span {
+  display: inline-block;
+}
+
+.label {
+    width: 100px;
+}
+
+.field {
+  width: 550px;
+  vertical-align: top;
+}
+
+.views-field.views-field-field-offer-images-1 {
+    margin-top: 20px;
+}
+
+div {
+    display: block;
+    margin: 5px 0 0;
+}
+.field.title {
+  font-weight: bold;
+  text-decoration: underline;
+} 
+
+.extras {
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+td {
+vertical-align: top;
+font-size: 12px;
+}
+
+.middle {
+  margin: 20px 0;
+}
+
+table.middle td{
+width: 330px;
+border-top: 1px solid #000;
+border-bottom: 1px solid #000;
+}
+
+td.qr {
+  text-align: center;
+}
