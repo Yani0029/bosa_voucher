@@ -2,10 +2,12 @@ name = BOSA Voucher
 description = Attendees and voucher stuff for BOSA
 core = 7.x
 dependencies[] = bosa_products
+files[] = bosa_voucher.voucher.inc
+files[] = bosa_voucher.admin.inc
+files[] = bosa_voucher.pages.inc
 
 ; Examples - use at will
 ;package = Views
 ;dependencies[] = views
 ;dependencies[] = panels
-;files[] = example.test
 ;configure = admin/config/content/example

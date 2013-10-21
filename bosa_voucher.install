@@ -1,0 +1,47 @@
+<?php
+
+function bosa_voucher_install() {
+  drupal_install_schema('bosa_voucher');
+}
+
+
+function bosa_voucher_uninstall() {
+  drupal_uninstall_schema('bosa_voucher');
+}
+
+
+function bosa_voucher_schema() {
+  $schema['bosa_voucher'] = array(
+    'description' => t('Stores info about checked vouchers'),
+    'fields' => array(
+      'line_item_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The line_item_id of the product'),
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'product_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+	  'created' => array(
+        'description' => t('A Unix timestamp indicating when voucher was scanned.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+	  ),
+    ),
+    'primary key' => array('line_item_id', 'uid'),
+  );
+
+  return $schema;
+}

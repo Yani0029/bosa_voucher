@@ -1,33 +1,24 @@
-body {
+
+
+@page { margin-top: 20px; }
+body { margin-top: 0px; 
   font-family: sans-serif;
   width: 700px;
   font-size: 12px;
 }
-.view-content .views-field.views-field-field-offer-you-get, 
-.view-content .views-field.views-field-title {
-width: 700px;
-}
-.views-field-title .field-content{
-  margin-top: 30px;
-  font-size: 20px;
-  display: block;
-}
-.views-label {
-  font-weight: bold;
-}
 
-.views-field.views-field {
-width: 300px;
-}
 .page-break{
   page-break-after: always;
 }
 
 td.left {
-width: 300px;
+  width: 500px;
+}
+td.right{
+  width: 200px;
 }
 .ticket { clear:left;
-padding-top: 30px;
+  padding-top: 30px;
 }
 .ticket.title{
   font-size: 20px;
@@ -46,23 +37,24 @@ span {
     width: 100px;
 }
 
-.field {
-  width: 550px;
+.field-info {
+  width: 500px;
   vertical-align: top;
 }
 
 .views-field.views-field-field-offer-images-1 {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 div {
-    display: block;
-    margin: 5px 0 0;
+  display: block;
+  margin: 5px 0 0;
 }
+
 .field.title {
   font-weight: bold;
   text-decoration: underline;
-} 
+}
 
 .extras {
   margin-top: 20px;
@@ -71,20 +63,48 @@ div {
 }
 
 td {
-vertical-align: top;
-font-size: 12px;
+  vertical-align: top;
+  font-size: 12px;
 }
 
 .middle {
   margin: 20px 0;
 }
 
-table.middle td{
-width: 330px;
-border-top: 1px solid #000;
-border-bottom: 1px solid #000;
+table.product-info td{
+  width: 2em;
 }
 
-td.qr {
-  text-align: center;
+table.product-info span {
+  padding-bottom: 5px;
+}
+
+.description {
+  padding: 0 10px;
+  border-right: 1px dashed;
+  width: 330px;
+}
+
+h2,
+.seller {
+  margin-top: 10px;
+}
+
+.seller{
+  padding-top: 7px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+td.label {
+  vertical-align: top;
+  border-right: 1px dashed;
+}
+table.middle {
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.info tr td {
+  border-bottom: 1px solid black;
 }

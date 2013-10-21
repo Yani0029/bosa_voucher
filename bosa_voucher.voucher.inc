@@ -13,9 +13,9 @@ function bosa_voucher_pdf($order_id, $arg = NULL){
   global $user;
 
   $order = commerce_order_load($order_id);
-  
+
   //entity_get_controller('commerce_order')->resetCache(array($order->order_id));
-  
+
   if(is_object($order)){
   $key = $order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id'];
   $key .= $order->created;
@@ -41,13 +41,12 @@ function bosa_voucher_pdf($order_id, $arg = NULL){
  *  split this up!
  *
  * @access public
- * @param 
+ * @param
  *  object $order, commerce order entity
  * @return
- *  
+ *
  **/
 function bosa_voucher_create_markup($order){
-  require_once libraries_get_path('dompdf') . '/dompdf_config.inc.php';
 
   global $base_url;
 
@@ -90,7 +89,7 @@ function bosa_voucher_create_markup($order){
   foreach ($order->commerce_line_items[LANGUAGE_NONE] as $value)
   {
     $line_item_entity = commerce_line_item_load($value['line_item_id']);
-    
+
     if(!empty($line_item_entity->field_line_item_ref))
     {
       $product_reference[$line_item_entity->field_line_item_ref[LANGUAGE_NONE][0]['value']][] = array(
@@ -109,7 +108,7 @@ function bosa_voucher_create_markup($order){
   foreach ($order->commerce_line_items[LANGUAGE_NONE] as $value)
   {
     $currentpage++;
-  
+
     $node_id = bosa_offer_mail_get_node_ids(array($value));
     if (is_numeric($node_id[0])) 
     {
@@ -117,58 +116,104 @@ function bosa_voucher_create_markup($order){
       if($line_item_entity->type == 'product')
       {
         $commerce_product_entity = commerce_product_load($line_item_entity->commerce_product[LANGUAGE_NONE][0]['product_id']);
+        error_log(__FILE__.':'.__LINE__. print_r($line_item_entity, 1)); // tth@bellcom.dk debugging
+        // If the date field is empty we need to insert some custom text, this in an array that holds this text, with languagecodes.
+        $empty_date_time = array(
+          'en' => 'Se gyldighed nedenfor',
+          'da' => 'Se gyldighed nedenfor',
+          'de' => 'Se gyldighed nedenfor',
+        );
+
+        $date_time =  $empty_date_time[$language_code];
+
+        if(!empty($commerce_product_entity->field_offer_dato)){
+          $date_time = $commerce_product_entity->field_offer_dato[LANGUAGE_NONE][0]['value'];
+        }
+
+
+        if(empty($commerce_product_entity->field_2nd_price_select)){
+          $price_info = array(
+            'en' => 'Voksen/Barn',
+            'da' => 'Voksen/Barn',
+            'de' => 'Voksen/Barn',
+          );
+        }
+        else {
+          $price_info = array(
+              'en' => 'Voksen',
+              'da' => 'Voksen',
+              'de' => 'Voksen',
+          );
+        }
+
+        // Some functionality for the second price stuff
+        if(!empty($line_item_entity->field_line_item_comment)){
+          $price_info = array(
+              'en' => 'Barn',
+              'da' => 'Barn',
+              'de' => 'Barn',
+          );
+        }
+
+        $price = commerce_currency_format($line_item_entity->commerce_unit_price[LANGUAGE_NONE][0]['amount'], $line_item_entity->commerce_unit_price[LANGUAGE_NONE][0]['currency_code']);
+
+        // Begin the ticket markup
         $view .= '<table><tr>
               <td class="left">';
-      
-        $view .= $preface;
-    
-        $view .= 
-          '<span class="field title">'.$commerce_product_entity->title.'</span><br />'.
-          '<span class="label">Dato og tidspunkt:</span><span class="field">'.$commerce_product_entity->field_offer_dato[LANGUAGE_NONE][0]['value'].'</span><br />'.
-          '<span class="label">Antal: </span><span class="field">'.(int)$line_item_entity->quantity.'</span><br />'.
-          '<span class="label"></span><span class="field">'.$line_item_entity->field_line_item_comment[LANGUAGE_NONE][0]['value'].'</span></td>';
 
-        if(variable_get('bosa_voucher_qr_enable')){
-          $ticket_id = bosa_voucher_ticket_id($line_item_entity);
-          $view .= '<td class="qr"><img src="' . bosa_voucher_qrcode($ticket_id) . '" />';
-          $view .= $ticket_id . '</td>';
-        }
-          
-        $view .= '<td class="right"><img src="' . $logo  . '">';
-        
+        $view .= $preface;
+
+        $view .= '</td><td class="right"><img src="' . $logo  . '">';
+
         $view .= $contactinfo;
 
         $view .= '</td></tr></table>';
 
-        $view .= '<table class="middle"><tr><td class="description">';
+        $view .=
+          '<table class="product-info"><tr><td><span class="field title">'.$commerce_product_entity->title.'</span><br />'.
+          '<span class="label">Dato og tidspunkt:</span><span class="field-info">'.$date_time.'</span><br />'.
+          '<span class="label">Antal: </span><span class="field-info">'.(int)$line_item_entity->quantity.' x '.$price_info[$language_code].' ('.$price.') </span><br />'.
+          '</td>';
+
+        if(variable_get('bosa_voucher_qr_enable')){
+          $ticket_id = bosa_voucher_ticket_id($line_item_entity);
+          $view .= '<td><span style="text-align:center" class="qr"><img src="' . bosa_voucher_qrcode($ticket_id) . '" /><br />';
+          $view .= $ticket_id . '</span></td>';
+        }
         
+        $view .= '</tr></table>';
+
+        $view .= '<table class="middle"><tr><td class="description">';
+
         $view .= bosa_voucher_get_node_info($node_id[0], 'product_description', $language_code);
 
         $view .= '</td><td>';
+        
+        $view .= '<table class="info">';
 
         $view .= bosa_voucher_get_node_info($node_id[0], 'seller_info', $language_code);
-        
-        $view .= '<p></p>';
+
 
         $view .= bosa_voucher_get_node_info($node_id[0], 'product_info', $language_code);
+        $view .= '</table>';
 
         $view .= '</td></tr></table>';
       }
-      
+
       // list extra products
       if(isset($product_reference[$line_item_entity->data['context']]) || !empty($product_reference[$line_item_entity->data['context']['product_ids'][0]]))
       {
         $view .= '<div class="extras">Tilkøbsprodukter</div>';
         foreach($product_reference[$line_item_entity->data['context']['product_ids'][0]] as $product_extras)
         {
-          $view .= '<span class="label">Produkt: </span><span class="field">'.$product_extras['title'].'</span><br />';
-          $view .= '<span class="label">Antal: </span><span class="field">'.(int)$product_extras['quantity'].'</span><br />';
-          $view .= '<span class="label">Kommentar: </span><span class="field">'.$product_extras['comment'].'</span><br />';
+          $view .= '<span class="label">Produkt: </span><span class="field-info">'.$product_extras['title'].'</span><br />';
+          $view .= '<span class="label">Antal: </span><span class="field-info">'.(int)$product_extras['quantity'].'</span><br />';
+          $view .= '<span class="label">Kommentar: </span><span class="field-info">'.$product_extras['comment'].'</span><br />';
         }
       }
     $view .= $postscript;
     }
-  
+
     // if there are more products on the order we want a pretty page break
     if($pages > $currentpage)
     {
@@ -178,11 +223,25 @@ function bosa_voucher_create_markup($order){
 
   $view .= '</body></html>';
 
+  return $view;
+}
 
-  //$view = file_get_contents('http://lillebaeltwaters.bellcom.dk/offer_mail_view/' . $id_url); 
+/*
+ * Generate pdf and save file or return stream
+ *
+ * @param
+ *  obj - commerce order
+ *  string - optional
+ *
+ * @return
+ *  mixed
+ */
+function bosa_voucher_create_pdf($order, $param = NULL){
+  require_once libraries_get_path('dompdf') . '/dompdf_config.inc.php';
+
+  $view = bosa_voucher_create_markup($order);
 
   //print $view;
-
   //die();
 
   $dompdf = new DOMPDF();
@@ -191,37 +250,40 @@ function bosa_voucher_create_markup($order){
   $dompdf->set_paper("a4","portrait");
   $dompdf->render();
 
-  $dompdf->stream('Ordre_'.$order->order_id.'.pdf');
-
-}
-
-function bosa_voucher_create_pdf($order, $param = NULL){
-  require_once libraries_get_path('dompdf') . '/dompdf_config.inc.php';
-
-  $view = bosa_voucher_create_markup($order);
-  
-  $dompdf = new DOMPDF();
-
-  $dompdf->load_html($view);
-  $dompdf->set_paper("a4","portrait");
-  $dompdf->render();
-
   if($param == 'file') {
-    return $dompdf->output();
+    $file = file_save_data($dompdf->output(), 'public://Ordre_'.$order_id. '.pdf');
+
+    return $file;
   }
 
   $dompdf->stream('Ordre_'.$order->order_id.'.pdf');
 }
 
+/*
+ * Save pdf to filesystem
+ *
+ * @param
+ *  int - order id
+ *
+ * @return
+ *  string - filepath, realpath
+ */
 function bosa_voucher_save_pdf($order_id) {
   $order = commerce_order_load($order_id);
-  $pdf = bosa_voucher_create_pdf($order, 'file');
-
-  $file = file_save_data($pdf, 'public://Ordre_'.$order_id. '.pdf');
+  $file = bosa_voucher_create_pdf($order, 'file');
 
   return drupal_realpath($file->uri);
 }
 
+/*
+ * Generate ticket id
+ *
+ * @param
+ *  int- lineitem id
+ *
+ * @return
+ *  string - ticket id
+ */
 function bosa_voucher_ticket_id($line_item) {
   $prefix = variable_get('bosa_voucher_qr_prefix');
 
@@ -235,7 +297,10 @@ function bosa_voucher_ticket_id($line_item) {
 /**
  * Generate QR code
  *
- * @return 
+ * @param
+ *  int - ticket id
+ *
+ * @return
  *  string - filepath
  */
 function bosa_voucher_qrcode($ticket_id) {
@@ -364,9 +429,9 @@ function bosa_voucher_get_node_info($nid, $arg, $language_code){
 
   $fields['seller_info'] = array(
     'field_seller_name' => array(
-      'en' => '',
-      'da' => '',
-      'de' => '',
+      'en' => '<tr><td class="seller" colspan="2">[value]</td></tr>',
+      'da' => '<tr><td class="seller" colspan="2">[value]</td></tr>',
+      'de' => '<tr><td class="seller" colspan="2">[value]</td></tr>',
     ),
     'locations/street' => array(
       'en' => 'Street',
@@ -479,7 +544,7 @@ function bosa_voucher_get_node_info($nid, $arg, $language_code){
       if(strstr($label, '[')){
         $info .= str_replace('[value]', $value, str_replace(':', '', $label));
       } else {
-        $info .= '<span class="label">' . $label . '</span>' . $value . '<br />';
+        $info .= '<tr><td class="label">' . $label . '</td><td>' . $value . '</td></tr>';
       
       }
     }

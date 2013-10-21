@@ -27,10 +27,10 @@ function bosa_voucher_ticket_page($id = NULL){
   // Verify line_item_id and product_id
   if($id_array[0] == variable_get('bosa_voucher_qr_prefix') &&
     $product_id == $id_array[2]){
-   
+
     // Check for permissions if bosa_products module is installed 
     if(bosa_products_permissions_check($product_id, $user->uid)){
-      
+
       if(bosa_voucher_save_ticket($id_array[1], $id_array[2], $user->uid)) {
         drupal_set_message(t('Ticket registered'));
       }
@@ -58,12 +58,19 @@ function bosa_voucher_product_page($id = NULL){
     return bosa_voucher_product_all_page();
   }
 
-  return drupal_render(drupal_get_form('bosa_voucher_ticket_form')) . bosa_voucher_attendees($id);
+  return '<a href="/bosa/voucher/product/all"><h3>&lt;&lt; See for other product</h3></a>' . drupal_render(drupal_get_form('bosa_voucher_ticket_form')) . '<div id="bosa_voucher_load" style="display:none;">Opdaterer...</div><div id="bosa_voucher_attendees"></div>';
 }
 
 
+function bosa_voucher_product_page_ajax($id = NULL){
+  print bosa_voucher_attendees($id);
+}
+
 function bosa_voucher_product_all_page(){
-  return drupal_render(drupal_get_form('bosa_voucher_product_form'));
+  return views_embed_view('bosa_voucher', 'block');
+
+
+  //return drupal_render(drupal_get_form('bosa_voucher_product_form'));
 }
 
 function bosa_voucher_ticket_form($form, &$form_state) {
@@ -82,21 +89,27 @@ function bosa_voucher_ticket_form_submit($form, &$form_state){
   global $user;
   $id_array = explode('-', $form_state['values']['ticket_id']);
 
-  // @todo:
-  // Validation that entered value is valid ticket id
-  
-  if(bosa_voucher_save_ticket($id_array[1], $id_array[2], $user->uid)) {
-    drupal_set_message(t('Ticket registered'));
-  }
-  else {
-    drupal_set_message(t('Ticket already used'), 'warning');
+  if(isset($id_array[1]) && isset($id_array[2])){
+    // @todo:
+    // Validation that entered value is valid ticket id
+
+    if(bosa_voucher_save_ticket($id_array[1], $id_array[2], $user->uid)) {
+      drupal_set_message(t('Ticket registered'));
+    }
+    else {
+      drupal_set_message(t('Ticket already used or invalid ticket id'), 'warning');
+    }
   }
 }
 
 /**
  * From here on it gets a little wierd!
+ *
+ * Reused code form bosa_attendees module, must be cleaned up.
  */
 function bosa_voucher_product_form($form, &$form_state) {
+  global $user;
+
   // Fetch a list of product names for the dropdown
   $productsQuery = new EntityFieldQuery();
   $productsQuery->entityCondition('entity_type', 'commerce_product')
@@ -116,11 +129,11 @@ function bosa_voucher_product_form($form, &$form_state) {
         }
       }
         $entity = entity_load('commerce_product', array($product->product_id));
-        $offerOptions = $offerOptions + array( $product->product_id => substr($entity[$product->product_id]->title, 0, 20) . '(...) - ' .$entity[$product->product_id]->sku . ' - ' . $entity[$product->product_id]->field_offer_dato[LANGUAGE_NONE][0]['value']);
+        @$offerOptions = $offerOptions + array( $product->product_id => substr($entity[$product->product_id]->title, 0, 20) . '(...) - ' .$entity[$product->product_id]->sku . ' - ' . $entity[$product->product_id]->field_offer_dato[LANGUAGE_NONE][0]['value']);
     }
   }
 
-  // build the forms 
+  // build the forms
   // products
   $form = array();
   $form['products'] = array(
@@ -153,15 +166,17 @@ function _bosa_voucher_offer_callback($form, $form_state) {
 }
 
 function bosa_voucher_attendees($product_id) {
+  $extras_html = '';
   $product = commerce_product_load($product_id);
   $extraLineItems = _bosa_voucher_extras_by_product_id($product_id);
 
   $lineItemQuery = new EntityFieldQuery();
   $lineItemQuery->entityCondition('entity_type', 'commerce_line_item')
    ->propertyCondition('line_item_label', $product->sku, '='); 
-  
+
   $lineItems = $lineItemQuery->execute();
- 
+
+
   if(!empty($lineItems)) {
     foreach ($lineItems['commerce_line_item'] as $lineItem) 
     {
@@ -174,7 +189,7 @@ function bosa_voucher_attendees($product_id) {
         {
           $end = end($allAttendees);
         }
-        
+
         if($end['order_id'] == $attendees['order_id'] && $end['comment'] == $attendees['comment'])
         {
 
@@ -185,12 +200,12 @@ function bosa_voucher_attendees($product_id) {
           $allAttendees[] = $attendees;
         }
       }
-    } 
+    }
   }
-  
+
   foreach($extraLineItems as $product_sku => $line_item_ids){
     $extraAttendees = array();
-    
+
     foreach($line_item_ids as $line_item_id){
       $attendees = _bosa_voucher_from_line_item_id($line_item_id);
       $extraAttendees[] = $attendees;
@@ -213,12 +228,15 @@ function bosa_voucher_attendees($product_id) {
     $node = node_load(key($nodeResult['node']));
     $title = $node->title;
   }
- 
+
   $price = commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $product->commerce_price[LANGUAGE_NONE][0]['currency_code']);
   $second_price = commerce_currency_format($product->field_2nd_price[LANGUAGE_NONE][0]['amount'], $product->field_2nd_price[LANGUAGE_NONE][0]['currency_code']);
-  
-  $dateandtime = strtotime($product->field_offer_dato[LANGUAGE_NONE][0]['value']); 
-  $dateandtime = date('d-m-Y G:i:s', $dateandtime);
+
+  $dateandtime = '';
+  if( isset($product->field_offer_dato)){
+    $dateandtime = strtotime($product->field_offer_dato[LANGUAGE_NONE][0]['value']); 
+    $dateandtime = date('d-m-Y G:i:s', $dateandtime);
+  }
   $header = '<table><tr><td class="header"><h3>'.$title.'</h3><p>' .$product->title .' '. $dateandtime .'</p></td></tr><tr><td>'.t('Prices:').'</td><td>'.t('Reg.:').'</td><td>'.$price.'</td></tr><tr><td></td><td>'.t('2nd:').'</td><td>'.$second_price.'</td></tr></table>';
 
   return $header . _bosa_voucher_attendees_html($allAttendees) . $extras_html;
@@ -234,7 +252,7 @@ function _bosa_voucher_from_line_item_id($line_item_id)
 {
   $lineItemsEntity= entity_load('commerce_line_item', array($line_item_id));
   $lineItemEntity = reset($lineItemsEntity);
-  
+
   $product = commerce_product_load_by_sku($lineItemEntity->line_item_label);
 
   $orderEntity = entity_load('commerce_order', array($lineItemEntity->order_id));
@@ -252,13 +270,16 @@ function _bosa_voucher_from_line_item_id($line_item_id)
       $phone = $wrapper->commerce_customer_billing->field_mobile_phone->value();
       $ticket = bosa_voucher_check_ticket($lineItemEntity->line_item_id, $product->product_id);
       $name = '-';
-      $date = '-';
+      $register = '<a href="/bosa/voucher/ticket/'. variable_get('bosa_voucher_qr_prefix') .'-'. $lineItemEntity->line_item_id . '-'. $lineItemEntity->commerce_product[LANGUAGE_NONE][0]['product_id'] .'"><i class="register-ticket"></i></a>';
+
+    error_log(print_r($lineItemEntity, 1));
 
       if(!empty($ticket)){
-        $date = date('H:i:s d-m-Y', $ticket[0]);
+        $register = date('H:i:s d-m-y', $ticket[0]);
         $user = user_load($ticket[1]);
         $name = $user->name;
       }
+
       $attendees = array(
         'name' => $address['name_line'],
         'phone' => $phone,
@@ -268,9 +289,9 @@ function _bosa_voucher_from_line_item_id($line_item_id)
         'line_item_id' => $lineItemEntity->line_item_id,
         'product_sku' => $lineItemEntity->line_item_label,
         'product_title' => $product->title,
-        'price' => commerce_currency_format($lineItemEntity->commerce_total[LANGUAGE_NONE][0]['amount'], $lineItemEntity->commerce_total[LANGUAGE_NONE][0]['currence_code']),
-        'product_price' => commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $lineItemEntity->commerce_price[LANGUAGE_NONE][0]['currence_code']),
-        'ticket_reg' => $date,
+        'price' => commerce_currency_format($lineItemEntity->commerce_total[LANGUAGE_NONE][0]['amount'], $lineItemEntity->commerce_total[LANGUAGE_NONE][0]['currency_code']),
+        'product_price' => commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $product->commerce_price[LANGUAGE_NONE][0]['currency_code']),
+        'ticket_reg' => $register,
         'ticket_reg_name' => $name,
       );
     }
@@ -284,12 +305,12 @@ function _bosa_voucher_from_line_item_id($line_item_id)
 function _bosa_voucher_extras_by_product_id($productId) {
   $lineItemQuery = new EntityFieldQuery();
   $lineItemQuery->entityCondition('entity_type', 'commerce_line_item')
-    ->fieldCondition('field_line_item_ref', 'value', $productId); 
-  
+    ->fieldCondition('field_line_item_ref', 'value', $productId);
+
   $lineItems = $lineItemQuery->execute(); 
   $extras = array();
 
-  if(is_array($lineItems['commerce_line_item'])){
+  if(isset($lineItems['commerce_line_item'])){
     foreach($lineItems['commerce_line_item'] as $key => $value){
 
       $lineItemsEntity= entity_load('commerce_line_item', array($key));
@@ -303,17 +324,22 @@ function _bosa_voucher_extras_by_product_id($productId) {
 
 function _bosa_voucher_attendees_html($allAttendees) {
   $rows = array();
+  $offerAttendees = '';
+  $number_of_attendees = 0;
+  $prevorderid = 0;
+  $header =  array(
+      array('data' => t('Order number:'),  'class' => 'order_id'),
+      array('data' => t('Name:'),          'class' => 'name'),
+      array('data' => t('Phone number:'),  'class' => 'phone'),
+      array('data' => t('Quantity:'),      'class' => 'quantity'),
+      array('data' => t('Comment:'),       'class' => 'comment'),
+      array('data' => t('Price:'),         'class' => 'price'),
+      array('data' => t('Register:'),      'class' => 'ticket_reg'),
+      array('data' => t('By:')            ,'class' => 'ticket_reg_name'),
+    );
 
-  $header = array(
-    t('Order number:'), 
-    t('Name:'), 
-    t('Phone number:'), 
-    t('Quantity:'), 
-    t('Comment:'), 
-    t('Price:'), 
-    t('Ticket registered:'), 
-    t('By:')
-  );
+
+
 
   if(!empty($allAttendees)){
     foreach($allAttendees as $attendee)
@@ -326,15 +352,26 @@ function _bosa_voucher_attendees_html($allAttendees) {
       }
 
       $prevorderid = $attendee['order_id'];
-      $rows[] = array(
-        $order_id,
-        $attendee['name'], 
-        $attendee['phone'], 
-        $attendee['quantity'], 
-        $attendee['comment'], 
-        $attendee['price'], 
-        $attendee['ticket_reg'], 
-        $attendee['ticket_reg_name']
+      $rows[] = array('data' => array(
+          array('data' => $order_id,                   'class' => 'order_id'),
+          array('data' => $attendee['name'],           'class' => 'name'),
+          array('data' => $attendee['phone'],          'class' => 'phone'),
+          array('data' => $attendee['quantity'],       'class' => 'quantity'),
+          array('data' => $attendee['comment'],        'class' => 'comment'),
+          array('data' => $attendee['price'],          'class' => 'price'),
+          array('data' => $attendee['ticket_reg'],     'class' => 'ticket_reg'),
+          array('data' => $attendee['ticket_reg_name'],'class' => 'ticket_reg_name'),
+        ),
+        'class' => array('data-row info'),
+        'data-id' => array($order_id),
+      );
+
+      $rows[] = array('data' => array(
+          array('data' => t('Phone:'). '<br />' . $attendee['phone'].'1231231asdf1',          'class' => 'phone'),
+          array('data' => t('Comment:'). '<br />' . $attendee['comment'],        'class' => 'comment', 'colspan' => 2),
+          array('data' => t('Price:'). '<br />' . $attendee['price'],          'class' => 'price', 'colspan' => 2),
+        ),
+        'class' => array('data-row extra-info hide order_id-'.$order_id),
       );
 
       $number_of_attendees += $attendee['quantity'];
@@ -344,9 +381,20 @@ function _bosa_voucher_attendees_html($allAttendees) {
   {
     $rows[] = array(t('No attendees'), '', '', '', '', '');
   }
-  $rows[] = array(t('Total:'), '', '', $number_of_attendees, '', '', ''); 
+  $rows[] = array('data' => array(
+      t('Total:'),
+      array('data' =>'', 'class' => 'footer-extra'),
+      '',
+      $number_of_attendees, 
+      '',
+      array('data' =>'', 'class' => 'footer-extra'),
+      array('data' =>'', 'class' => 'footer-extra'),
+      '',
+    ),
+    'class' => array('attendees-footer'),
+  );
 
-  $offerAttendees .= theme('table', array('header' => $header, 'rows' =>  $rows));
+  $offerAttendees .= theme('table', array('header' => $header, 'rows' =>  $rows, 'attributes' => array('class' => array('attendees'))));
 
   return $offerAttendees;
 }
