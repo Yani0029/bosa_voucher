@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Bosa Voucher Views feature.
+ */
+
+include_once 'bosa_voucher_views.features.inc';
