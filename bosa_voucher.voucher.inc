@@ -109,14 +109,13 @@ function bosa_voucher_create_markup($order){
   {
     $currentpage++;
 
-    $node_id = bosa_offer_mail_get_node_ids(array($value));
+    $node_id = bosa_voucher_get_node_ids(array($value));
     if (is_numeric($node_id[0])) 
     {
       $line_item_entity = commerce_line_item_load($value['line_item_id']);
       if($line_item_entity->type == 'product')
       {
         $commerce_product_entity = commerce_product_load($line_item_entity->commerce_product[LANGUAGE_NONE][0]['product_id']);
-        error_log(__FILE__.':'.__LINE__. print_r($line_item_entity, 1)); // tth@bellcom.dk debugging
         // If the date field is empty we need to insert some custom text, this in an array that holds this text, with languagecodes.
         $empty_date_time = array(
           'en' => 'Se gyldighed nedenfor',

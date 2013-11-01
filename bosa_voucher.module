@@ -164,7 +164,7 @@ function bosa_voucher_mail($key, &$message, $params) {
 /**
  * Implements hook_commerce_checkout_complete()
  */
-function bosa_offer_mail_commerce_checkout_complete($order) {
+function bosa_voucher_commerce_checkout_complete($order) {
   if(variable_get('bosa_voucher_mail_enable', FALSE) && $order->status =='checkout_complete'){
     $params['order_id'] = $order->order_id;
 
