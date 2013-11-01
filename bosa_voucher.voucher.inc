@@ -107,6 +107,7 @@ function bosa_voucher_create_markup($order){
   // The actual page markup generation
   foreach ($order->commerce_line_items[LANGUAGE_NONE] as $value)
   {
+    error_log(print_r($value, 1));
     $currentpage++;
 
     $node_id = bosa_offer_mail_get_node_ids(array($value));
@@ -116,7 +117,6 @@ function bosa_voucher_create_markup($order){
       if($line_item_entity->type == 'product')
       {
         $commerce_product_entity = commerce_product_load($line_item_entity->commerce_product[LANGUAGE_NONE][0]['product_id']);
-        error_log(__FILE__.':'.__LINE__. print_r($line_item_entity, 1)); // tth@bellcom.dk debugging
         // If the date field is empty we need to insert some custom text, this in an array that holds this text, with languagecodes.
         $empty_date_time = array(
           'en' => 'Se gyldighed nedenfor',
@@ -211,7 +211,10 @@ function bosa_voucher_create_markup($order){
           $view .= '<span class="label">Kommentar: </span><span class="field-info">'.$product_extras['comment'].'</span><br />';
         }
       }
-    $view .= $postscript;
+    }
+    if($line_item_entity->type == 'product')
+    {
+      $view .= '<br /><br />'.$postscript;
     }
 
     // if there are more products on the order we want a pretty page break
