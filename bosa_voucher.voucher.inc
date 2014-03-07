@@ -110,7 +110,7 @@ function bosa_voucher_create_markup($order){
     error_log(print_r($value, 1));
     $currentpage++;
 
-    $node_id = bosa_offer_mail_get_node_ids(array($value));
+    $node_id = bosa_voucher_get_node_ids(array($value));
     if (is_numeric($node_id[0])) 
     {
       $line_item_entity = commerce_line_item_load($value['line_item_id']);
