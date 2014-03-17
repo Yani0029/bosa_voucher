@@ -9,18 +9,32 @@
  * @return 
  *  _bosa_offer_mail_create_pdf callback
  **/
-function bosa_voucher_pdf($order_id, $arg = NULL){
+function bosa_voucher_pdf($order_id = NULL, $arg = NULL){
   global $user;
+  
 
   $order = commerce_order_load($order_id);
+
+
+  // Allow the customer to download the voucher from the checkout complete page
+  $tmp = explode('/', $_SERVER['HTTP_REFERER']);
+  $complete = array_pop($tmp);  
+  $order_id_tmp = array_pop($tmp);  
+  $checkout = array_pop($tmp);  
+
+  if( $complete == 'complete' && is_numeric($order_id_tmp) && $checkout == 'checkout' ){
+    $order = commerce_order_load($order_id_tmp);
+    return bosa_voucher_create_pdf($order);
+  }
 
   //entity_get_controller('commerce_order')->resetCache(array($order->order_id));
 
   if(is_object($order)){
-  $key = $order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id'];
-  $key .= $order->created;
+    $key = $order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id'];
+    $key .= $order->created;
 
 
+    // Allow the admin or offer admin to download the voucher from the orderslist page
     if($key == $arg || (in_array('administrator', $user->roles) || in_array('Offer admin', $user->roles ) ))
     {
       return bosa_voucher_create_pdf($order);
