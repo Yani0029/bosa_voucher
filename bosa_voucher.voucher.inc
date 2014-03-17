@@ -210,7 +210,9 @@ function bosa_voucher_create_markup($order){
           $view .= '<span class="label">Kommentar: </span><span class="field-info">'.$product_extras['comment'].'</span><br />';
         }
       }
-    $view .= $postscript;
+      if($line_item_entity->type == 'product') {
+        $view .= $postscript;
+      }
     }
 
     // if there are more products on the order we want a pretty page break

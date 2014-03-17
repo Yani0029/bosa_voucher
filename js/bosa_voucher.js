@@ -16,7 +16,6 @@
 
       function order_id_click(event){
         id = $(this).parent().data('id');
-        console.log(id);
         $('.order_id-'+id).toggleClass('hide');
       }
 
@@ -39,7 +38,7 @@
       run = resize();
       run = reload();
 
-      window.setInterval(function(){reload();}, 180000);
+      window.setInterval(function(){reload();}, 60000);
     }
   };
 }(jQuery));

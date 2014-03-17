@@ -229,9 +229,13 @@ function bosa_voucher_attendees($product_id) {
     $title = $node->title;
   }
 
-  $price = commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $product->commerce_price[LANGUAGE_NONE][0]['currency_code']);
-  $second_price = commerce_currency_format($product->field_2nd_price[LANGUAGE_NONE][0]['amount'], $product->field_2nd_price[LANGUAGE_NONE][0]['currency_code']);
+  $price = '';
+  $second_price = '';
 
+  $price = commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $product->commerce_price[LANGUAGE_NONE][0]['currency_code']);
+  if(!empty($product->field_2nd_price)){
+    $second_price = commerce_currency_format($product->field_2nd_price[LANGUAGE_NONE][0]['amount'], $product->field_2nd_price[LANGUAGE_NONE][0]['currency_code']);
+  }
   $dateandtime = '';
   if( isset($product->field_offer_dato)){
     $dateandtime = strtotime($product->field_offer_dato[LANGUAGE_NONE][0]['value']); 
@@ -263,7 +267,7 @@ function _bosa_voucher_from_line_item_id($line_item_id)
 
   if(isset($orderEntity->status))
   {
-    if ($orderEntity->status !== 'canceled' || $orderEntity->status !== 'cart')
+    if ($orderEntity->status == 'completed')
     {
       $wrapper = entity_metadata_wrapper('commerce_order', $orderEntity);
       $address = $wrapper->commerce_customer_billing->commerce_customer_address->value();
@@ -272,16 +276,22 @@ function _bosa_voucher_from_line_item_id($line_item_id)
       $name = '-';
       $register = '<a href="/bosa/voucher/ticket/'. variable_get('bosa_voucher_qr_prefix') .'-'. $lineItemEntity->line_item_id . '-'. $lineItemEntity->commerce_product[LANGUAGE_NONE][0]['product_id'] .'"><i class="register-ticket"></i></a>';
 
-    error_log(print_r($lineItemEntity, 1));
-
       if(!empty($ticket)){
         $register = date('H:i:s d-m-y', $ticket[0]);
         $user = user_load($ticket[1]);
         $name = $user->name;
       }
 
+      // Module bosa_attendees, implements this function.
+      if(function_exists('bosa_attendees_get_attendees_markup')){
+        $attendee_names = bosa_attendees_get_attendees_markup($lineItemEntity, $address['name_line']);
+      }
+      else {
+        $attendee_names = $address['name_line'];
+      }
+
       $attendees = array(
-        'name' => $address['name_line'],
+        'name' => $attendee_names,
         'phone' => $phone,
         'quantity' => (int)$lineItemEntity->quantity,
         'order_id' => $orderEntity->order_id,
@@ -337,9 +347,6 @@ function _bosa_voucher_attendees_html($allAttendees) {
       array('data' => t('Register:'),      'class' => 'ticket_reg'),
       array('data' => t('By:')            ,'class' => 'ticket_reg_name'),
     );
-
-
-
 
   if(!empty($allAttendees)){
     foreach($allAttendees as $attendee)
