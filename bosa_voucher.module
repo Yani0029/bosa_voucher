@@ -136,7 +136,7 @@ function bosa_voucher_mail($key, &$message, $params) {
   // Add pdf as attachment
   $attachment = array(
     'filecontent' => $pdf_path,
-    'filename' => 'Ordre_' . $params['order_id'] . '.pdf',
+    'filename' => 'Voucher_' . $params['order_id'] . '.pdf',
     'filemime' => 'application/pdf',
   );
 

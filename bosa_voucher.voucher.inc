@@ -267,12 +267,12 @@ function bosa_voucher_create_pdf($order, $param = NULL){
   $dompdf->render();
 
   if($param == 'file') {
-    $file = file_save_data($dompdf->output(), 'public://Ordre_'.$order_id. '.pdf');
+    $file = file_save_data($dompdf->output(), 'public://Voucher_'.$order_id. '.pdf');
 
     return $file;
   }
 
-  $dompdf->stream('Ordre_'.$order->order_id.'.pdf');
+  $dompdf->stream('Voucher'.$order->order_id.'.pdf');
 }
 
 /*
