@@ -121,7 +121,6 @@ function bosa_voucher_create_markup($order){
   // The actual page markup generation
   foreach ($order->commerce_line_items[LANGUAGE_NONE] as $value)
   {
-    error_log(print_r($value, 1));
     $currentpage++;
 
     $node_id = bosa_voucher_get_node_ids(array($value));
@@ -138,10 +137,16 @@ function bosa_voucher_create_markup($order){
           'de' => 'Se gyldighed nedenfor',
         );
 
-        $date_time =  $empty_date_time[$language_code];
+        $date_time = $empty_date_time[$language_code];
 
         if(!empty($commerce_product_entity->field_offer_dato)){
           $date_time = $commerce_product_entity->field_offer_dato[LANGUAGE_NONE][0]['value'];
+        }
+        // Add selected date form line_item, if there is NOT field_offer_dato field.
+        else {
+          $selected_date = ($line_item_entity->field_bosa_selected_date[LANGUAGE_NONE][0]['value'] == "01/01/1970 - 01:00")
+                           ? $empty_date_time[$language_code] : $line_item_entity->field_bosa_selected_date[LANGUAGE_NONE][0]['value'];
+          $date_time = $selected_date;
         }
 
 

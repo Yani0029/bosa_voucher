@@ -25,8 +25,10 @@
 
         path = document.location.pathname;
         n = path.split('/');
-
-        $('#bosa_voucher_attendees').load('/bosa/voucher/product/ajax/'+n[5], function(){
+        if (n.length < 7) {
+          n[6] = "";
+        }
+        $('#bosa_voucher_attendees').load('/bosa/voucher/product/ajax/'+n[5]+'/'+n[6], function(){
           $('#bosa_voucher_load').hide();
           run = resize();
 

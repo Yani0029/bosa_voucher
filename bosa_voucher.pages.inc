@@ -37,7 +37,6 @@ function bosa_voucher_ticket_page($id = NULL){
       else {
         drupal_set_message(t('Ticket already used'), 'warning');
       }
-
       drupal_goto('bosa/voucher/product/'.$id_array[2]);
     }
   }
@@ -45,7 +44,7 @@ function bosa_voucher_ticket_page($id = NULL){
 }
 
 
-function bosa_voucher_product_page($id = NULL){
+function bosa_voucher_product_page($id = NULL,$delta = NULL){
   // Check if user is logged in
   global $user;
 
@@ -62,13 +61,13 @@ function bosa_voucher_product_page($id = NULL){
 }
 
 
-function bosa_voucher_product_page_ajax($id = NULL){
-  print bosa_voucher_attendees($id);
+function bosa_voucher_product_page_ajax($id = NULL,$delta = NULL){
+  print bosa_voucher_attendees($id,$delta);
 }
 
-function bosa_voucher_product_all_page(){
-  return views_embed_view('bosa_voucher', 'block');
 
+function bosa_voucher_product_all_page(){
+  return '<a href="/bosa/voucher/bosa_product/all"><h3>&lt;&lt; See for BOSA product</h3></a>'.views_embed_view('bosa_voucher', 'block');
 
   //return drupal_render(drupal_get_form('bosa_voucher_product_form'));
 }
@@ -165,7 +164,7 @@ function _bosa_voucher_offer_callback($form, $form_state) {
   return '<div id="replace_textfield_div"><div class="print-page"><a href="'.$link.'">Udskriv</a></div>' . bosa_voucher_attendees($form_state['values']['products']).  '</div>';
 }
 
-function bosa_voucher_attendees($product_id) {
+function bosa_voucher_attendees($product_id,$delta = "") {
   $extras_html = '';
   $product = commerce_product_load($product_id);
   $extraLineItems = _bosa_voucher_extras_by_product_id($product_id);
@@ -178,9 +177,14 @@ function bosa_voucher_attendees($product_id) {
 
 
   if(!empty($lineItems)) {
-    foreach ($lineItems['commerce_line_item'] as $lineItem) 
-    {
+    foreach ($lineItems['commerce_line_item'] as $lineItem) {
       $attendees = _bosa_voucher_from_line_item_id($lineItem->line_item_id);
+      // Bosa product contains more than one date, so check delta that is array key in fields.
+      if ($delta != "") {
+        if($attendees['delta'] != $delta) {
+          continue;
+        }
+      }
       if(!empty($attendees))
       {
         $end = array('order_id' => '', 'comment' => '');
@@ -189,10 +193,9 @@ function bosa_voucher_attendees($product_id) {
         {
           $end = end($allAttendees);
         }
-
-        if($end['order_id'] == $attendees['order_id'] && $end['comment'] == $attendees['comment'])
+        // check also product date in BOSA product type
+        if($end['order_id'] == $attendees['order_id'] && $end['comment'] == $attendees['comment'] && $end['product_date'] == $attendees['product_date'])
         {
-
           $allAttendees[sizeof($allAttendees)-1]['quantity']++;
         }
         else
@@ -242,7 +245,6 @@ function bosa_voucher_attendees($product_id) {
     $dateandtime = date('d-m-Y G:i:s', $dateandtime);
   }
   $header = '<table><tr><td class="header"><h3>'.$title.'</h3><p>' .$product->title .' '. $dateandtime .'</p></td></tr><tr><td>'.t('Prices:').'</td><td>'.t('Reg.:').'</td><td>'.$price.'</td></tr><tr><td></td><td>'.t('2nd:').'</td><td>'.$second_price.'</td></tr></table>';
-
   return $header . _bosa_voucher_attendees_html($allAttendees) . $extras_html;
 }
 
@@ -289,6 +291,8 @@ function _bosa_voucher_from_line_item_id($line_item_id)
       else {
         $attendee_names = $address['name_line'];
       }
+      $info = bosa_reserved_delta_check_by_line_item($line_item_id);
+      $product_date = bosa_reserved_get_date_by_line_item($line_item_id);
 
       $attendees = array(
         'name' => $attendee_names,
@@ -303,6 +307,8 @@ function _bosa_voucher_from_line_item_id($line_item_id)
         'product_price' => commerce_currency_format($product->commerce_price[LANGUAGE_NONE][0]['amount'], $product->commerce_price[LANGUAGE_NONE][0]['currency_code']),
         'ticket_reg' => $register,
         'ticket_reg_name' => $name,
+        'product_date' => ($product_date == "01/01/1970 - 01:00") ? "" :$product_date ,
+        'delta' => $info[$line_item_id],
       );
     }
   }
@@ -346,6 +352,7 @@ function _bosa_voucher_attendees_html($allAttendees) {
       array('data' => t('Price:'),         'class' => 'price'),
       array('data' => t('Register:'),      'class' => 'ticket_reg'),
       array('data' => t('By:')            ,'class' => 'ticket_reg_name'),
+      array('data'=> t('Dato:')            ,'class' => 'product_date')
     );
 
   if(!empty($allAttendees)){
@@ -368,6 +375,7 @@ function _bosa_voucher_attendees_html($allAttendees) {
           array('data' => $attendee['price'],          'class' => 'price'),
           array('data' => $attendee['ticket_reg'],     'class' => 'ticket_reg'),
           array('data' => $attendee['ticket_reg_name'],'class' => 'ticket_reg_name'),
+          array('data'=> $attendee['product_date'],    'class' => 'product_date')
         ),
         'class' => array('data-row info'),
         'data-id' => array($order_id),
@@ -397,6 +405,7 @@ function _bosa_voucher_attendees_html($allAttendees) {
       array('data' =>'', 'class' => 'footer-extra'),
       array('data' =>'', 'class' => 'footer-extra'),
       '',
+      '',
     ),
     'class' => array('attendees-footer'),
   );
@@ -405,5 +414,3 @@ function _bosa_voucher_attendees_html($allAttendees) {
 
   return $offerAttendees;
 }
-
-
